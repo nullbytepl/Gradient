@@ -113,6 +113,7 @@
 		qcom,mdss-dsi-panel-timings = [D5 32 22 00 60 64 26 36 29 03 04 00];
 		qcom,mdss-dsi-t-clk-post = <0x2c>;
 		qcom,mdss-dsi-t-clk-pre = <0x2b>;
+		qcom,ulps-enabled;
 		//qcom,esd-check-enabled;
 		qcom,mdss-dsi-panel-status-command = [06 01 00 01 05 00 01 0A];
 		qcom,mdss-dsi-panel-status-command-state = "dsi_hs_mode";
