@@ -92,15 +92,30 @@ cpumask_var_t irq_default_affinity;
  *	@irq:		Interrupt to check
  *
  */
-int irq_can_set_affinity(unsigned int irq)
+bool irq_can_set_affinity(unsigned int irq)
 {
 	struct irq_desc *desc = irq_to_desc(irq);
 
 	if (!desc || !irqd_can_balance(&desc->irq_data) ||
 	    !desc->irq_data.chip || !desc->irq_data.chip->irq_set_affinity)
-		return 0;
+		return false;
 
-	return 1;
+	return true;
+}
+
+ /**
+ * irq_can_set_affinity_usr - Check if affinity of a irq can be set from user space
+ * @irq:	Interrupt to check
+ *
+ * Like irq_can_set_affinity() above, but additionally checks for the
+ * AFFINITY_MANAGED flag.
+ */
+bool irq_can_set_affinity_usr(unsigned int irq)
+{
+	struct irq_desc *desc = irq_to_desc(irq);
+
+	return irq_can_set_affinity(irq) &&
+		!irqd_affinity_is_managed(&desc->irq_data);
 }
 
 /**
@@ -1261,7 +1276,7 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 			irq_set_affinity_locked(&desc->irq_data,
 				cpu_perf_mask, true);
 		} else {
-			setup_affinity(desc, mask);
+			setup_affinity(irq, desc, mask);
 		}
 
 	} else if (new->flags & IRQF_TRIGGER_MASK) {

@@ -235,7 +235,7 @@ irq_force_affinity(unsigned int irq, const struct cpumask *cpumask)
 	return __irq_set_affinity(irq, cpumask, true);
 }
 
-extern int irq_can_set_affinity(unsigned int irq);
+extern bool irq_can_set_affinity(unsigned int irq);
 extern int irq_select_affinity(unsigned int irq);
 
 extern int irq_set_affinity_hint(unsigned int irq, const struct cpumask *m);
