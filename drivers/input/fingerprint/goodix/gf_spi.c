@@ -692,7 +692,7 @@ static int gf_probe(struct platform_device *pdev)
         gf_dev->irq = gf_irq_num(gf_dev);
 #if 1
 		ret = request_threaded_irq(gf_dev->irq, NULL, gf_irq,
-					   IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+					   IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_PERF_CRITICAL,
 					   "gf", gf_dev);
 #else
 		ret = request_irq(gf_dev->irq, gf_irq,

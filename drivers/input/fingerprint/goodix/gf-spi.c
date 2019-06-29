@@ -1291,7 +1291,7 @@ static int  gf_probe(struct spi_device *spi)
 
 #if 1
 		err = request_threaded_irq(spi->irq, NULL, gf_irq,
-			IRQF_TRIGGER_RISING | IRQF_ONESHOT,
+			IRQF_TRIGGER_RISING | IRQF_ONESHOT | IRQF_PERF_CRITICAL,
 			dev_name(&spi->dev), gf_dev);
 #else
 		err = request_irq(gf_dev->spi->irq, gf_irq,
