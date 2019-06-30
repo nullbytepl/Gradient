@@ -251,7 +251,7 @@ int msm_dsi_irq_init(struct device *dev, int irq_no,
 	msm_dsi_ahb_ctrl(0);
 
 	ret = devm_request_irq(dev, irq_no, msm_dsi_isr_handler,
-				IRQF_DISABLED, "DSI", ctrl);
+				IRQF_DISABLED | IRQF_PERF_CRITICAL, "DSI", ctrl);
 	if (ret) {
 		pr_err("msm_dsi_irq_init request_irq() failed!\n");
 		return ret;
