@@ -79,6 +79,8 @@
 	_adc_val = (u8)((_current) * 100 / 976);	\
 }
 
+#define FG_RATE_LIM_MS (5 * MSEC_PER_SEC)
+
 /* Debug Flag Definitions */
 enum {
 	FG_SPMI_DEBUG_WRITES		= BIT(0), /* Show SPMI writes */
@@ -429,6 +431,11 @@ static void fg_relax(struct fg_wakeup_source *source)
 	}
 }
 
+struct fg_saved_data {
+	union power_supply_propval val;
+	unsigned long last_req_expires;
+};
+
 #define THERMAL_COEFF_N_BYTES		6
 struct fg_chip {
 	struct device		*dev;
@@ -572,6 +579,7 @@ struct fg_chip {
 	struct delayed_work	check_sanity_work;
 	struct fg_wakeup_source	sanity_wakeup_source;
 	u8			last_beat_count;
+	struct fg_saved_data	saved_data[POWER_SUPPLY_PROP_MAX];
 };
 
 /* FG_MEMIF DEBUGFS structures */
@@ -3153,12 +3161,48 @@ static enum power_supply_property fg_power_props[] = {
 	POWER_SUPPLY_PROP_SOC_REPORTING_READY,
 };
 
+static bool is_usb_present(struct fg_chip *chip)
+{
+	union power_supply_propval prop = {0,};
+	if (!chip->usb_psy)
+		chip->usb_psy = power_supply_get_by_name("usb");
+
+	if (chip->usb_psy)
+		chip->usb_psy->get_property(chip->usb_psy,
+				POWER_SUPPLY_PROP_ONLINE, &prop);
+	return prop.intval != 0;
+}
+
 static int fg_power_get_property(struct power_supply *psy,
 				       enum power_supply_property psp,
 				       union power_supply_propval *val)
 {
 	struct fg_chip *chip = container_of(psy, struct fg_chip, bms_psy);
 	bool vbatt_low_sts;
+	struct fg_saved_data *sd = chip->saved_data + psp;
+
+	switch (psp) {
+	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
+	case POWER_SUPPLY_PROP_RESISTANCE_ID:
+	case POWER_SUPPLY_PROP_VOLTAGE_MAX_DESIGN:
+	case POWER_SUPPLY_PROP_CYCLE_COUNT_ID:
+	case POWER_SUPPLY_PROP_CHARGE_NOW:
+	case POWER_SUPPLY_PROP_CHARGE_FULL:
+	case POWER_SUPPLY_PROP_SOC_REPORTING_READY:
+		/* These props don't require a fg query; don't ratelimit them */
+		break;
+	default:
+		if (!sd->last_req_expires)
+			break;
+
+		if (!is_usb_present(chip) &&
+			time_before(jiffies, sd->last_req_expires)) {
+			*val = sd->val;
+			return 0;
+		}
+		break;
+	}
+
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_BATTERY_TYPE:
@@ -3248,6 +3292,9 @@ static int fg_power_get_property(struct power_supply *psy,
 	default:
 		return -EINVAL;
 	}
+
+	sd->val = *val;
+	sd->last_req_expires = jiffies + msecs_to_jiffies(FG_RATE_LIM_MS);
 
 	return 0;
 }
@@ -3763,18 +3810,6 @@ static int fg_cap_learning_check(struct fg_chip *chip)
 fail:
 	mutex_unlock(&chip->learning_data.learning_lock);
 	return rc;
-}
-
-static bool is_usb_present(struct fg_chip *chip)
-{
-	union power_supply_propval prop = {0,};
-	if (!chip->usb_psy)
-		chip->usb_psy = power_supply_get_by_name("usb");
-
-	if (chip->usb_psy)
-		chip->usb_psy->get_property(chip->usb_psy,
-				POWER_SUPPLY_PROP_PRESENT, &prop);
-	return prop.intval != 0;
 }
 
 static bool is_dc_present(struct fg_chip *chip)
