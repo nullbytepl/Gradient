@@ -99,6 +99,8 @@ struct kgsl_driver {
 	unsigned int full_cache_threshold;
 	struct kthread_worker worker;
 	struct task_struct *worker_thread;
+	struct workqueue_struct *workqueue;
+	struct workqueue_struct *mem_workqueue;
 };
 
 extern struct kgsl_driver kgsl_driver;
@@ -406,6 +408,15 @@ static inline int timestamp_cmp(unsigned int a, unsigned int b)
 	a += KGSL_TIMESTAMP_WINDOW;
 	b += KGSL_TIMESTAMP_WINDOW;
 	return ((a > b) && (a - b <= KGSL_TIMESTAMP_WINDOW)) ? 1 : -1;
+}
+
+/**
+ * kgsl_schedule_work() - Schedule a work item on the KGSL workqueue
+ * @work: work item to schedule
+ */
+static inline void kgsl_schedule_work(struct work_struct *work)
+{
+	queue_work(kgsl_driver.workqueue, work);
 }
 
 static inline int
