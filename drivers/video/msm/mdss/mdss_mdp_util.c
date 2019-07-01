@@ -233,6 +233,9 @@ mdp_isr_done:
 		goto hist_isr_done;
 	mdss_mdp_hist_intr_done(hist_isr);
 hist_isr_done:
+	if (cmpxchg(&mdata->pm_irq_set, true, false))
+		schedule_work(&mdata->pm_unset_work);
+	
 	return IRQ_HANDLED;
 }
 

@@ -1048,6 +1048,14 @@ static int mdss_iommu_tlb_timeout_notify(struct notifier_block *self,
 	return 0;
 }
 
+static void mdss_pm_unset(struct work_struct *work)
+{
+	struct mdss_data_type *mdata = container_of(work, typeof(*mdata),
+						    pm_unset_work);
+
+	pm_qos_update_request(&mdata->pm_irq_req, PM_QOS_DEFAULT_VALUE);
+}
+
 static int mdss_mdp_irq_clk_setup(struct mdss_data_type *mdata)
 {
 	int ret;
@@ -1068,6 +1076,12 @@ static int mdss_mdp_irq_clk_setup(struct mdss_data_type *mdata)
 		return ret;
 	}
 	disable_irq(mdss_mdp_hw.irq_info->irq);
+
+	INIT_WORK(&mdata->pm_unset_work, mdss_pm_unset);
+	mdata->pm_irq_req.type = PM_QOS_REQ_AFFINE_IRQ;
+	mdata->pm_irq_req.irq = mdss_mdp_hw.irq_info->irq;
+	pm_qos_add_request(&mdata->pm_irq_req, PM_QOS_CPU_DMA_LATENCY,
+			   PM_QOS_DEFAULT_VALUE);
 
 	mdata->fs = devm_regulator_get(&mdata->pdev->dev, "vdd");
 	if (IS_ERR_OR_NULL(mdata->fs)) {

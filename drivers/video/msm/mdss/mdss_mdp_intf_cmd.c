@@ -1038,6 +1038,7 @@ static int mdss_mdp_cmd_enable_cmd_autorefresh(struct mdss_mdp_ctl *ctl,
  */
 int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 {
+	struct mdss_data_type *mdata = mdss_mdp_get_mdata();
 	struct mdss_mdp_ctl *sctl = NULL;
 	struct mdss_mdp_cmd_ctx *ctx, *sctx = NULL;
 
@@ -1123,6 +1124,11 @@ int mdss_mdp_cmd_kickoff(struct mdss_mdp_ctl *ctl, void *arg)
 		mdss_mdp_cmd_enable_cmd_autorefresh(ctl,
 				ctx->autorefresh_pending_frame_cnt);
 	}
+	
+	/* Don't let the CPU servicing the MDP IRQs enter deep idle */
+	if (!cancel_work_sync(&mdata->pm_unset_work))
+		pm_qos_update_request(&mdata->pm_irq_req, 100);
+	WRITE_ONCE(mdata->pm_irq_set, true);
 
 	mdss_mdp_ctl_perf_set_transaction_status(ctl,
 		PERF_SW_COMMIT_STATE, PERF_STATUS_DONE);
