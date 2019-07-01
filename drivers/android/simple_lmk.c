@@ -13,6 +13,14 @@
 #include <linux/sort.h>
 #include <linux/version.h>
 
+/* Fixes for older kernels */
+#ifndef MAX_RT_PRIO
+#define MAX_RT_PRIO		100
+#endif
+#ifndef MIN_NICE
+#define MIN_NICE	-20
+#endif
+
 /* The sched_param struct is located elsewhere in newer kernels */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 #include <uapi/linux/sched/types.h>
