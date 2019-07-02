@@ -1728,7 +1728,7 @@ static struct worker *create_worker(struct worker_pool *pool)
 {
 	struct worker *worker = NULL;
 	int id = -1;
-	char id_buf[16];
+	char id_buf[32];
 
 	lockdep_assert_held(&pool->manager_mutex);
 
