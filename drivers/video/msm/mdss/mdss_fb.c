@@ -47,6 +47,7 @@
 #include <linux/file.h>
 #include <linux/kthread.h>
 #include <linux/input.h>
+#include <linux/cpu_input_boost.h>
 
 #include <linux/qcom_iommu.h>
 #include <linux/msm_iommu_domains.h>

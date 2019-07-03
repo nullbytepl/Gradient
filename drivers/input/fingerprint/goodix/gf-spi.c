@@ -41,6 +41,7 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/completion.h>
+#include <linux/cpu_input_boost.h>
 #include "gf-spi.h"
 
 /*spi device name*/
@@ -909,6 +910,7 @@ static irqreturn_t gf_irq(int irq, void* handle)
     gf_debug(SUSPEND_DEBUG, "status = 0x%x, mode = %d\n", status, mode);
     pr_info("[info] %s irq happend,status = 0x%x, mode = %d\n", __func__, status, mode);
 
+	cpu_input_boost_kick_max(100);
     switch(mode)
     {
 	case GF_FF_MODE:
